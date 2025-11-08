@@ -9,7 +9,18 @@ This project provides two CLI implementations for Moneris payment processing:
 1. **moneris-cli** - Uses Postman API Network context for accurate API implementation
 2. **moneris-cli-no-postman** - Uses general knowledge of Moneris APIs
 
-Both CLIs support the same core operations: authentication, creating payments, and listing payments.
+### Core Operations
+
+**moneris-cli** supports:
+- Authentication (OAuth2)
+- Create payments with card details
+- List payments with cursor-based pagination
+- Delete all payments (demonstrates API limitation - payments cannot be deleted)
+
+**moneris-cli-no-postman** supports:
+- Authentication (OAuth2)
+- Create payments
+- List payments with page-based pagination
 
 ## Installation
 
@@ -66,6 +77,13 @@ npm run dev:postman list-payments \
 
 # List next page using cursor
 npm run dev:postman list-payments --cursor "d41d8cd98f00b204e9800998ecf8427e"
+
+# Delete all payments (Note: Moneris API doesn't support payment deletion)
+# Shows warning and requires --confirm flag
+npm run dev:postman delete-all-payments
+
+# Attempt deletion with confirmation (will fail with helpful message)
+npm run dev:postman delete-all-payments --confirm
 ```
 
 ### moneris-cli-no-postman (General API version)
@@ -114,6 +132,9 @@ npm run dev:no-postman list-payments -s completed
 - Comprehensive error handling
 - Type-safe TypeScript implementation
 - Single-file architecture for easy deployment
+- Input validation with helpful error messages
+- Safety confirmations for destructive operations
+- Educational error handling (e.g., demonstrates API limitations)
 
 ## Project Structure
 

@@ -504,6 +504,95 @@ async function listPayments(
 }
 
 /**
+ * Delete all payments (Note: Moneris API does not support payment deletion)
+ */
+async function deleteAllPayments(confirm: boolean = false): Promise<void> {
+  const config = getConfig();
+  const token = loadToken();
+
+  if (!token) {
+    console.error(chalk.red('\n✗ Not authenticated'));
+    console.log(chalk.yellow('Please run: moneris-cli auth'));
+    process.exit(1);
+  }
+
+  console.log(chalk.blue('\n🗑️  Attempting to delete all payments...'));
+
+  try {
+    const client = createApiClient(token.access_token, config);
+
+    // First, fetch all payments
+    let allPayments: PaymentResponse[] = [];
+    let cursor: string | undefined;
+    let hasMore = true;
+
+    console.log(chalk.gray('Fetching all payments...'));
+
+    while (hasMore) {
+      const params: Record<string, any> = {};
+      if (cursor) {
+        params.cursor = cursor;
+      }
+
+      const response = await client.get<ListPaymentsResponse>('/payments', { params });
+      allPayments = allPayments.concat(response.data.data);
+      hasMore = response.data.has_more;
+      cursor = response.data.next_cursor;
+    }
+
+    if (allPayments.length === 0) {
+      console.log(chalk.yellow('\n⚠ No payments found'));
+      return;
+    }
+
+    console.log(chalk.yellow(`\n⚠ Found ${allPayments.length} payment(s)`));
+    console.log(chalk.red('\n⚠ Important: The Moneris API does not support deleting payments'));
+    console.log(chalk.gray('   Payments cannot be deleted for compliance and audit purposes.'));
+    console.log(chalk.gray('   To reverse a payment, use the refund feature instead.\n'));
+
+    // Confirm attempt
+    if (!confirm) {
+      console.log(chalk.yellow('Use --confirm flag to attempt deletion anyway (will fail):'));
+      console.log(chalk.cyan('  moneris-cli delete-all-payments --confirm\n'));
+      return;
+    }
+
+    // Try to delete each payment (will fail with 404)
+    let deletedCount = 0;
+    let failedCount = 0;
+
+    console.log(chalk.gray('Attempting deletion (expected to fail)...\n'));
+
+    for (const payment of allPayments) {
+      try {
+        await client.delete(`/payments/${payment.paymentId}`);
+        deletedCount++;
+        console.log(chalk.gray(`  ✓ Deleted payment ${payment.paymentId}`));
+      } catch (error) {
+        failedCount++;
+        if (axios.isAxiosError(error) && error.response?.status === 404) {
+          console.log(chalk.yellow(`  ⚠ Payment ${payment.paymentId} - DELETE not supported (404)`));
+        } else {
+          console.log(chalk.red(`  ✗ Failed to delete payment ${payment.paymentId}`));
+          if (axios.isAxiosError(error) && error.response) {
+            console.log(chalk.gray(`    Status: ${error.response.status}`));
+          }
+        }
+      }
+    }
+
+    console.log(chalk.cyan('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'));
+    console.log(chalk.green(`✓ Deleted: ${deletedCount} payment(s)`));
+    console.log(chalk.yellow(`⚠ Not supported: ${failedCount} payment(s)`));
+    console.log(chalk.cyan('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'));
+    console.log(chalk.gray('\nNote: Use refunds to reverse payments instead of deletion.\n'));
+
+  } catch (error) {
+    handleError(error, 'Delete all payments');
+  }
+}
+
+/**
  * Get colored status based on payment status
  */
 function getStatusColor(status: string): string {
@@ -579,6 +668,15 @@ program
       options.createdFrom,
       options.createdTo
     );
+  });
+
+// Delete all payments command
+program
+  .command('delete-all-payments')
+  .description('Delete all payments (useful for cleaning up test data)')
+  .option('--confirm', 'Confirm deletion (required to proceed)')
+  .action(async (options) => {
+    await deleteAllPayments(options.confirm);
   });
 
 // Show help if no command provided
