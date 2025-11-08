@@ -1,0 +1,28 @@
+{
+  "name": "moneris-cli",
+  "version": "1.0.0",
+  "description": "Command-line interfaces for Moneris payment gateway",
+  "scripts": {
+    "build": "tsc",
+    "dev:no-postman": "ts-node moneris-cli-no-postman.ts",
+    "dev:postman": "ts-node moneris-cli.ts"
+  },
+  "bin": {
+    "moneris-cli": "./dist/moneris-cli.js",
+    "moneris-cli-no-postman": "./dist/moneris-cli-no-postman.js"
+  },
+  "keywords": ["moneris", "payment", "cli", "gateway"],
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "commander": "^11.1.0",
+    "chalk": "^4.1.2",
+    "axios": "^1.6.2",
+    "dotenv": "^16.3.1"
+  },
+  "devDependencies": {
+    "@types/node": "^20.10.5",
+    "typescript": "^5.3.3",
+    "ts-node": "^10.9.2"
+  }
+}

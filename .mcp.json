@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "postmanCode": {
+      "type": "sse",
+      "url": "https://postman-code-mcp.vercel.app/mcp",
+      "headers": {
+        "Authorization": "Bearer ${POSTMAN_API_KEY}"
+      }
+    }
+  }
+}
