@@ -597,7 +597,7 @@ async function deleteAllPayments(confirm: boolean = false): Promise<void> {
  */
 function getStatusColor(status: string): string {
   const statusLower = status.toLowerCase();
-  if (statusLower.includes('success') || statusLower.includes('completed') || statusLower.includes('approved')) {
+  if (statusLower.includes('succeed') || statusLower.includes('completed') || statusLower.includes('approved')) {
     return chalk.green('');
   } else if (statusLower.includes('pending') || statusLower.includes('processing')) {
     return chalk.yellow('');
