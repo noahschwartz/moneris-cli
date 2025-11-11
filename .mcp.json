@@ -1,10 +1,10 @@
 {
   "mcpServers": {
-    "postmanCode": {
-      "type": "sse",
-      "url": "https://postman-code-mcp.vercel.app/mcp",
-      "headers": {
-        "Authorization": "Bearer ${POSTMAN_API_KEY}"
+    "postman-code-mcp": {
+      "command": "node",
+      "args": [ "/Users/noah.schwartzpostman.com/Projects/postman-code-mcp/stdio.js" ],
+      "env": {
+        "POSTMAN_API_KEY": "${POSTMAN_API_KEY}"
       }
     }
   }
