@@ -102,6 +102,7 @@ interface PaymentResponse {
   credentialOnFileResponse?: any;
   refundDetails?: any;
   customData?: Record<string, string>;
+  dynamicDescriptor?: string;
 }
 
 interface ListPaymentsResponse {
@@ -392,6 +393,8 @@ async function createPayment(
         },
         storePaymentMethod: 'DO_NOT_STORE',
       },
+      // Store description in customData so it's available in list responses
+      customData: description ? { description } : undefined,
     };
 
     const response = await client.post<PaymentResponse>('/payments', paymentData);
@@ -476,6 +479,11 @@ async function listPayments(
     console.log(chalk.cyan('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━'));
 
     payments.forEach((payment, index) => {
+      // Debug: show raw payment object
+      if (process.env.DEBUG) {
+        console.log(chalk.gray(`\nRAW PAYMENT DATA:\n${JSON.stringify(payment, null, 2)}\n`));
+      }
+
       console.log(chalk.bold(`\n${index + 1}. Payment ${payment.paymentId}`));
       // Convert cents to dollars for display
       console.log(`   Amount:      ${formatCurrency(payment.amount.amount / 100, payment.amount.currency)}`);
@@ -483,8 +491,38 @@ async function listPayments(
       if (payment.orderId) {
         console.log(`   Order ID:    ${payment.orderId}`);
       }
+      // Show description from customData or dynamicDescriptor
+      const description = payment.customData?.description || payment.dynamicDescriptor;
+      if (description) {
+        console.log(`   Description: ${description}`);
+      }
       if (payment.transactionDetails?.transactionUniqueId) {
         console.log(`   Transaction: ${payment.transactionDetails.transactionUniqueId}`);
+      }
+      // Show refund details if present
+      if (payment.refundDetails) {
+        console.log(chalk.yellow(`   Refunds:`));
+
+        // Handle the refundDetails structure: { refunds: [...], refundedAmount: {...} }
+        if (payment.refundDetails.refunds && Array.isArray(payment.refundDetails.refunds)) {
+          const refunds = payment.refundDetails.refunds;
+          const refundedAmount = payment.refundDetails.refundedAmount;
+
+          if (refundedAmount) {
+            console.log(chalk.yellow(`     Total Refunded: ${formatCurrency(refundedAmount.amount / 100, refundedAmount.currency)}`));
+          }
+
+          refunds.forEach((refund: any, refundIndex: number) => {
+            console.log(chalk.yellow(`     ${refundIndex + 1}. Refund ID: ${refund.refundId}`));
+          });
+        } else if (Array.isArray(payment.refundDetails)) {
+          // Fallback for array format
+          payment.refundDetails.forEach((refund: any, refundIndex: number) => {
+            console.log(chalk.yellow(`     ${refundIndex + 1}. ${formatCurrency((refund.amount?.amount || 0) / 100, refund.amount?.currency || payment.amount.currency)} - ${refund.status || 'Unknown'}`));
+            if (refund.refundId) console.log(chalk.gray(`        ID: ${refund.refundId}`));
+            if (refund.createdAt) console.log(chalk.gray(`        Date: ${formatDate(refund.createdAt)}`));
+          });
+        }
       }
       console.log(`   Created:     ${formatDate(payment.createdAt)}`);
     });
